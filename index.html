@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Tracker</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Roboto+Mono:wght@300;400;500;700&display=swap');
+        
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #141824;
+            --bg-card: #1a1f2e;
+            --text-primary: #e8eaed;
+            --text-secondary: #9aa0a6;
+            --accent-primary: #00d9ff;
+            
+            --zone-1: #3b82f6;
+            --zone-2: #4ade80;
+            --zone-3: #eab308;
+            --zone-4: #f97316;
+            --zone-5: #ef4444;
+            
+            --connected: #4ade80;
+            --disconnected: #ef4444;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1f2e 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding-top: 60px;
+            padding-bottom: 60px;
+        }
+        
+        /* Fixed Top Navigation */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border-bottom: 2px solid rgba(0, 217, 255, 0.2);
+            z-index: 1000;
+            padding: 8px;
+        }
+        
+        .top-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: space-around;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .top-buttons button {
+            flex: 1;
+            font-family: 'Roboto Mono', monospace;
+            padding: 12px 8px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+        
+        .btn-start {
+            background: var(--zone-2);
+            color: #000;
+        }
+        
+        .btn-connect {
+            background: var(--disconnected);
+            color: white;
+        }
+        
+        .btn-connect.connected {
+            background: var(--connected);
+            color: #000;
+        }
+        
+        .btn-stop {
+            background: var(--zone-5);
+            color: white;
+        }
+        
+        .btn-save {
+            background: var(--zone-4);
+            color: white;
+        }
+        
+        .btn-home {
+            background: var(--accent-primary);
+            color: #000;
+        }
+        
+        .top-buttons button:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+        
+        .top-buttons button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Fixed Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border-top: 2px solid rgba(0, 217, 255, 0.2);
+            z-index: 1000;
+            padding: 8px;
+        }
+        
+        .bottom-buttons {
+            display: flex;
+            gap: 4px;
+            justify-content: space-around;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .bottom-buttons button {
+            flex: 1;
+            font-family: 'Roboto Mono', monospace;
+            padding: 10px 4px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .bottom-buttons button:hover,
+        .bottom-buttons button.active {
+            background: rgba(0, 217, 255, 0.2);
+            border-color: var(--accent-primary);
+        }
+        
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 12px;
+        }
+        
+        /* Config Line */
+        .config-line {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .config-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .config-group label {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+        
+        .config-group input,
+        .config-group select {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .config-group input {
+            width: 70px;
+        }
+        
+        .config-group select {
+            min-width: 140px;
+        }
+        
+        /* Graph Container */
+        .graph-section {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .graph-container {
+            position: relative;
+            height: 400px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid rgba(0, 217, 255, 0.2);
+        }
+        
+        #heartRateCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .graph-overlay-hr {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .graph-overlay-hr .value {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--accent-primary);
+        }
+        
+        .graph-overlay-hr .unit {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+        
+        .elapsed-time {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        /* Workout History */
+        .history-section {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .history-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+        
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .history-item:hover {
+            background: rgba(0, 217, 255, 0.1);
+        }
+        
+        .history-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .history-label {
+            flex: 1;
+            font-size: 0.85rem;
+        }
+        
+        .history-color {
+            width: 40px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        /* Strength Training Section */
+        .strength-section {
+            display: none;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            min-height: calc(100vh - 140px);
+        }
+        
+        .strength-section.active {
+            display: block;
+        }
+        
+        .exercise-group {
+            margin-bottom: 40px;
+        }
+        
+        .exercise-header {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+        
+        .exercise-select {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid rgba(0, 217, 255, 0.3);
+            color: var(--text-primary);
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+        
+        .sets-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .sets-table th {
+            background: var(--bg-secondary);
+            padding: 10px;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sets-table td {
+            padding: 12px 8px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--bg-secondary);
+        }
+        
+        .sets-table tr.checked {
+            background: rgba(0, 217, 255, 0.2);
+        }
+        
+        .sets-table input[type="number"] {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            text-align: center;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1rem;
+            padding: 8px;
+        }
+        
+        .sets-table input[type="number"]:focus {
+            outline: 2px solid var(--accent-primary);
+            border-radius: 4px;
+        }
+        
+        .sets-table input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .previous-data {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .faint-placeholder {
+            color: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Save Dialog */
+        .save-dialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-card);
+            border: 2px solid var(--accent-primary);
+            border-radius: 12px;
+            padding: 24px;
+            z-index: 2000;
+            min-width: 300px;
+        }
+        
+        .save-dialog.show {
+            display: block;
+        }
+        
+        .dialog-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1999;
+        }
+        
+        .dialog-overlay.show {
+            display: block;
+        }
+        
+        .dialog-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 16px;
+        }
+        
+        .dialog-option {
+            background: var(--bg-secondary);
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        
+        .dialog-option:hover {
+            border-color: var(--accent-primary);
+            background: rgba(0, 217, 255, 0.1);
+        }
+        
+        .dialog-close {
+            margin-top: 16px;
+            width: 100%;
+            padding: 10px;
+            background: var(--zone-5);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+        }
+        
+        /* Bluetooth Dialog */
+        .bluetooth-dialog {
+            padding: 20px;
+        }
+        
+        .purchase-link {
+            display: block;
+            margin-top: 20px;
+            padding: 16px;
+            background: var(--accent-primary);
+            color: #000;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .purchase-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 217, 255, 0.4);
+        }
+        
+        /* Responsive */
+        @media (max-width: 640px) {
+            .top-buttons button {
+                font-size: 0.7rem;
+                padding: 10px 4px;
+            }
+            
+            .bottom-buttons button {
+                font-size: 0.65rem;
+                padding: 8px 2px;
+            }
+            
+            .config-line {
+                font-size: 0.8rem;
+            }
+            
+            .graph-overlay-hr .value {
+                font-size: 2rem;
+            }
+        }
+        
+        .cardio-section {
+            display: block;
+        }
+        
+        .cardio-section.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Fixed Top Navigation -->
+    <div class="top-nav">
+        <div class="top-buttons">
+            <button class="btn-start" id="startBtn" onclick="startWorkout()">START</button>
+            <button class="btn-connect" id="connectBtn" onclick="connectDevice()">CONNECT</button>
+            <button class="btn-stop" id="stopBtn" onclick="stopWorkout()" disabled>STOP</button>
+            <button class="btn-save" id="saveBtn" onclick="showSaveDialog()">SAVE</button>
+            <button class="btn-home" onclick="window.open('https://longevitylab.fun', '_blank')">HOME</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Cardio Section -->
+        <div class="cardio-section" id="cardioSection">
+            <!-- Config Line -->
+            <div class="config-line">
+                <div class="config-group">
+                    <label for="ageInput">AGE</label>
+                    <input type="number" id="ageInput" value="65" min="1" max="120" onchange="updateZonesFromAge()">
+                </div>
+                <div class="config-group">
+                    <select id="activityType">
+                        <option value="RUN">RUN</option>
+                        <option value="BIKE">BIKE</option>
+                        <option value="ELLIPTICAL">ELLIPTICAL</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Graph -->
+            <div class="graph-section">
+                <div class="graph-container">
+                    <div class="graph-overlay-hr">
+                        <span class="value" id="currentHRValue">--</span>
+                        <span class="unit">BPM</span>
+                    </div>
+                    <div class="elapsed-time" id="elapsedTime">00:00 min</div>
+                    <canvas id="heartRateCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Workout History -->
+            <div class="history-section">
+                <div class="history-title">Workout History</div>
+                <div id="historyList"></div>
+            </div>
+        </div>
+
+        <!-- Strength Training Sections -->
+        <div class="strength-section" id="chestBackSection">
+            <div class="exercise-group">
+                <div class="exercise-header">CHEST</div>
+                <select class="exercise-select" id="chestExercise" onchange="loadExerciseData('chest')"></select>
+                <table class="sets-table" id="chestTable">
+                    <thead>
+                        <tr>
+                            <th>SET</th>
+                            <th>PREVIOUS</th>
+                            <th>POUNDS</th>
+                            <th>REPS</th>
+                            <th>✓</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="exercise-group">
+                <div class="exercise-header">BACK</div>
+                <select class="exercise-select" id="backExercise" onchange="loadExerciseData('back')"></select>
+                <table class="sets-table" id="backTable">
+                    <thead>
+                        <tr>
+                            <th>SET</th>
+                            <th>PREVIOUS</th>
+                            <th>POUNDS</th>
+                            <th>REPS</th>
+                            <th>✓</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="strength-section" id="bicepTricepSection">
+            <div class="exercise-group">
+                <div class="exercise-header">BICEP</div>
+                <select class="exercise-select" id="bicepExercise" onchange="loadExerciseData('bicep')"></select>
+                <table class="sets-table" id="bicepTable">
+                    <thead>
+                        <tr>
+                            <th>SET</th>
+                            <th>PREVIOUS</th>
+                            <th>POUNDS</th>
+                            <th>REPS</th>
+                            <th>✓</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="exercise-group">
+                <div class="exercise-header">TRICEP</div>
+                <select class="exercise-select" id="tricepExercise" onchange="loadExerciseData('tricep')"></select>
+                <table class="sets-table" id="tricepTable">
+                    <thead>
+                        <tr>
+                            <th>SET</th>
+                            <th>PREVIOUS</th>
+                            <th>POUNDS</th>
+                            <th>REPS</th>
+                            <th>✓</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="strength-section" id="shouldersSection">
+            <div class="exercise-group">
+                <div class="exercise-header">SHOULDERS</div>
+                <select class="exercise-select" id="shouldersExercise" onchange="loadExerciseData('shoulders')"></select>
+                <table class="sets-table" id="shouldersTable">
+                    <thead>
+                        <tr>
+                            <th>SET</th>
+                            <th>PREVIOUS</th>
+                            <th>POUNDS</th>
+                            <th>REPS</th>
+                            <th>✓</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="exercise-group">
+                <div class="exercise-header">SHOULDERS (2)</div>
+                <select class="exercise-select" id="shoulders2Exercise" onchange="loadExerciseData('shoulders2')"></select>
+                <table class="sets-table" id="shoulders2Table">
+                    <thead>
+                        <tr>
+                            <th>SET</th>
+                            <th>PREVIOUS</th>
+                            <th>POUNDS</th>
+                            <th>REPS</th>
+                            <th>✓</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="strength-section" id="abdomenSection">
+            <div class="exercise-group">
+                <div class="exercise-header">ABDOMEN</div>
+                <select class="exercise-select" id="abdomenExercise" onchange="loadExerciseData('abdomen')"></select>
+                <table class="sets-table" id="abdomenTable">
+                    <thead>
+                        <tr>
+                            <th>SET</th>
+                            <th>PREVIOUS</th>
+                            <th>POUNDS</th>
+                            <th>REPS</th>
+                            <th>✓</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="exercise-group">
+                <div class="exercise-header">QUADRICEPS</div>
+                <select class="exercise-select" id="quadsExercise" onchange="loadExerciseData('quads')"></select>
+                <table class="sets-table" id="quadsTable">
+                    <thead>
+                        <tr>
+                            <th>SET</th>
+                            <th>PREVIOUS</th>
+                            <th>POUNDS</th>
+                            <th>REPS</th>
+                            <th>✓</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="strength-section" id="legsSection">
+            <div class="exercise-group">
+                <div class="exercise-header">LEGS - EXTENSION</div>
+                <select class="exercise-select" id="legsExtExercise" onchange="loadExerciseData('legsExt')"></select>
+                <table class="sets-table" id="legsExtTable">
+                    <thead>
+                        <tr>
+                            <th>SET</th>
+                            <th>PREVIOUS</th>
+                            <th>POUNDS</th>
+                            <th>REPS</th>
+                            <th>✓</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="exercise-group">
+                <div class="exercise-header">LEGS - CURL</div>
+                <select class="exercise-select" id="legsCurlExercise" onchange="loadExerciseData('legsCurl')"></select>
+                <table class="sets-table" id="legsCurlTable">
+                    <thead>
+                        <tr>
+                            <th>SET</th>
+                            <th>PREVIOUS</th>
+                            <th>POUNDS</th>
+                            <th>REPS</th>
+                            <th>✓</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fixed Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="bottom-buttons">
+            <button onclick="showSection('cardio')" class="active" id="btnCardio">CARDIO</button>
+            <button onclick="showSection('chestBack')" id="btnChestBack">CHEST/BACK</button>
+            <button onclick="showSection('bicepTricep')" id="btnBicepTricep">BICEP/TRICEP</button>
+            <button onclick="showSection('shoulders')" id="btnShoulders">SHOULDERS</button>
+            <button onclick="showSection('abdomen')" id="btnAbdomen">ABDOMEN</button>
+            <button onclick="showSection('legs')" id="btnLegs">LEGS</button>
+        </div>
+    </div>
+
+    <!-- Save Dialog -->
+    <div class="dialog-overlay" id="dialogOverlay" onclick="closeSaveDialog()"></div>
+    <div class="save-dialog" id="saveDialog">
+        <div class="dialog-title">Save Workout Data</div>
+        <div class="dialog-option" onclick="saveToLocal()">Save to Local Storage</div>
+        <div class="dialog-option" onclick="saveToFile()">Save to File (Download)</div>
+        <div class="dialog-option" onclick="saveToGoogleSheets()">Save to Google Sheets</div>
+        <button class="dialog-close" onclick="closeSaveDialog()">Cancel</button>
+    </div>
+
+    <script>
+        // Exercise Lists
+        const exercises = {
+            chest: ["Dumbbell Press", "Barbell Bench Press", "Incline Dumbbell Bench Press", "Pec Deck", "Cable Crossover", "Incline Barbell Bench Press", "Dumbbell Bench Press", "Dumbbell Fly", "Incline Dumbbell Fly", "Chest Press Machine", "Barbell Declined Bench Press", "Dumbbell Declined Bench Press", "Push Ups"],
+            
+            back: ["Supported Incline Row", "Dumbbell Bent-Over Row (Single Arm)", "Wide-Grip Pulldown", "Seated Cable Row", "Close-Grip Pulldown", "Barbell Row", "Behind-Neck Pulldown", "Reverse-Grip Pulldown", "Rope Pulldown", "T-Bar Rows", "Barbell Bent Over Rows Supinated Grip", "Pull Up", "Behind the Neck Pull Up", "Pull Up with a Supinated Grip", "Straight Arm Lat Pulldown", "Dumbbell Bent Over Rows", "Dumbbell Pullover", "Barbell Pullover", "Barbell Deadlift", "Barbell Sumo Deadlift", "Trap Bar Deadlift", "Dumbbell Deadlift", "Barbell Shrug", "Dumbbell Shrugs"],
+            
+            shoulders: ["Lat Pulldown", "Dumbbell Shoulder Press", "Dumbbell Lateral Raise", "Dumbbell Front Raise", "High Cable Rear Delt Fly", "Smith Machine Shoulder Press", "Barbell Upright Row", "Bent-Over Lateral Raise", "Cable One-Arm Lateral Raise", "Dumbbell Push Press", "Barbell Push Press", "Single-Arm Cable Front Raise", "Barbell Front Raise", "Seated Barbell Shoulder Press", "Seated Behind the Neck Barbell Shoulder Press", "Standing Barbell Shoulder Press", "Standing Behind the Neck Barbell Shoulder Press", "Alternate Dumbbell Front Raise Neutral Grip", "One-Arm Low-Pulley Front Raise Neutral Grip", "Two-Handed Dumbbell Front Raise"],
+            
+            shoulders2: ["Overhead Press Barbell", "Dumbbell Shoulder Press", "Dumbbell Lateral Raise", "Dumbbell Front Raise", "High Cable Rear Delt Fly", "Smith Machine Shoulder Press", "Barbell Upright Row", "Bent-Over Lateral Raise", "Cable One-Arm Lateral Raise", "Dumbbell Push Press", "Barbell Push Press", "Single-Arm Cable Front Raise", "Barbell Front Raise", "Seated Barbell Shoulder Press"],
+            
+            bicep: ["Curl", "Barbell Curl", "Alternating Dumbbell Curl", "Rope Cable Curl", "EZ Barbell Curl", "EZ Barbell Preacher Curl", "Hammer Curl", "Incline Dumbbell Curl", "Dumbbell Concentration Curl", "Single-Arm Low Pulley Cable Curl", "Straight Bar Low Pulley Cable Curl", "Standing High Pulley Cable Curl", "Seated Barbell Wrist Curl", "Seated Barbell Wrist Extension", "Reverse Barbell Curl"],
+            
+            tricep: ["Triceps Extension", "Lying Triceps Extension", "Triceps Pressdown", "Cable Rope Pushdown", "Dumbbell Overhead Triceps Extension", "Close Grip Bench Press", "Kickback", "Reverse Grip Cable Triceps Extension with Barbell", "Single-Arm Cable Triceps Extension", "Single-Arm Cable Triceps Extension with Supinated Grip", "Lying Dumbbell Triceps Extension", "Seated Barbell French Press", "Bench Dips", "Parallel Dip Bar"],
+            
+            abdomen: ["Situp", "Crunch", "Oblique Crunch", "Crunch Machine", "Rope Ab Pulldown", "Plank", "Hanging Leg Raise", "Bent Knee Reverse Crunch", "Long Arm Crunch", "Plank Get Ups"],
+            
+            quads: ["Leg Press", "Squat", "Leg Extension", "Lunge", "Lying Leg Curl", "Hack Squat", "Seated Leg Curl", "Single Leg Extension", "Front Squat", "Dumbbell Goblet Squat"],
+            
+            legsExt: ["Knee Extension", "Leg Extension", "Single Leg Extension", "Squat", "Leg Press", "Lunge", "Hack Squat", "Front Squat"],
+            
+            legsCurl: ["Knee Curl", "Lying Leg Curl", "Seated Leg Curl", "Dumbbell Stiff-Leg Deadlift", "Barbell Stiff-Leg Deadlift", "Good Morning", "Glute Ham Raise"]
+        };
+
+        // State
+        let device = null;
+        let characteristic = null;
+        let isWorkoutActive = false;
+        let isPaused = false;
+        let workoutData = [];
+        let startTime = null;
+        let pauseTime = 0;
+        let animationFrame = null;
+        let selectedHistory = [];
+        const roygbivColors = ['#ef4444', '#f97316', '#eab308', '#4ade80', '#3b82f6', '#6366f1', '#8b5cf6'];
+        
+        const canvas = document.getElementById('heartRateCanvas');
+        const ctx = canvas.getContext('2d');
+        const zoneColors = ['#3b82f6', '#4ade80', '#eab308', '#f97316', '#ef4444'];
+        
+        // Initialize
+        function init() {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            window.addEventListener('orientationchange', resizeCanvas);
+            
+            loadAge();
+            populateExercises();
+            updateHistoryList();
+            draw();
+        }
+        
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            draw();
+        }
+        
+        // Calculate zones using Karvonen method
+        function calculateZonesFromAge() {
+            const age = parseInt(document.getElementById('ageInput').value) || 65;
+            const restingHR = 60;
+            const maxHR = 220 - age;
+            const reserveHR = maxHR - restingHR;
+            
+            const zones = [
+                Math.round(reserveHR * 0.50 + restingHR),
+                Math.round(reserveHR * 0.60 + restingHR),
+                Math.round(reserveHR * 0.70 + restingHR),
+                Math.round(reserveHR * 0.80 + restingHR),
+                Math.round(reserveHR * 0.90 + restingHR)
+            ];
+            
+            return { zones, maxHR, restingHR };
+        }
+        
+        function updateZonesFromAge() {
+            const age = parseInt(document.getElementById('ageInput').value);
+            localStorage.setItem('hrAge', age);
+            draw();
+        }
+        
+        function getZone(hr) {
+            const { zones } = calculateZonesFromAge();
+            for (let i = zones.length - 1; i >= 0; i--) {
+                if (hr >= zones[i]) return i + 1;
+            }
+            return 0;
+        }
+        
+        function loadAge() {
+            const stored = localStorage.getItem('hrAge');
+            if (stored) {
+                document.getElementById('ageInput').value = stored;
+            }
+        }
+        
+        // Bluetooth Connection
+        async function connectDevice() {
+            try {
+                device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: ['heart_rate'] }]
+                });
+                
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService('heart_rate');
+                characteristic = await service.getCharacteristic('heart_rate_measurement');
+                
+                await characteristic.startNotifications();
+                characteristic.addEventListener('characteristicvaluechanged', handleHeartRate);
+                
+                const btn = document.getElementById('connectBtn');
+                btn.classList.add('connected');
+                btn.textContent = 'CONNECTED';
+                document.getElementById('startBtn').disabled = false;
+                
+                console.log('Connected to:', device.name);
+            } catch (error) {
+                console.error('Connection failed:', error);
+                showBluetoothDialog();
+            }
+        }
+        
+        function showBluetoothDialog() {
+            alert('Failed to connect. Make sure Bluetooth is enabled and your heart rate monitor is nearby.');
+            const link = document.createElement('a');
+            link.href = 'https://longevitylab.fun';
+            link.target = '_blank';
+            link.textContent = 'Click here to purchase a compatible heart monitor';
+            link.className = 'purchase-link';
+            link.style.cssText = 'display:block;margin:20px;padding:16px;background:#00d9ff;color:#000;text-align:center;text-decoration:none;border-radius:8px;font-weight:700;';
+            
+            if (confirm('Would you like to purchase a compatible heart rate monitor?')) {
+                window.open('https://longevitylab.fun', '_blank');
+            }
+        }
+        
+        function handleHeartRate(event) {
+            const value = event.target.value;
+            const heartRate = value.getUint8(1);
+            
+            document.getElementById('currentHRValue').textContent = heartRate;
+            
+            if (isWorkoutActive && !isPaused) {
+                const elapsed = (Date.now() - startTime - pauseTime) / 1000;
+                workoutData.push({ time: elapsed, hr: heartRate });
+            }
+        }
+        
+        // Workout Controls
+        function startWorkout() {
+            if (!isWorkoutActive) {
+                isWorkoutActive = true;
+                workoutData = [];
+                startTime = Date.now();
+                pauseTime = 0;
+                isPaused = false;
+                
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+            } else if (isPaused) {
+                // Resume
+                pauseTime += Date.now() - pauseStartTime;
+                isPaused = false;
+            }
+            
+            updateElapsedTime();
+            draw();
+        }
+        
+        let pauseStartTime = 0;
+        
+        function stopWorkout() {
+            if (!isPaused) {
+                isPaused = true;
+                pauseStartTime = Date.now();
+            }
+        }
+        
+        function updateElapsedTime() {
+            if (isWorkoutActive && !isPaused) {
+                const elapsed = (Date.now() - startTime - pauseTime) / 1000;
+                const mins = Math.floor(elapsed / 60);
+                const secs = Math.floor(elapsed % 60);
+                document.getElementById('elapsedTime').textContent = 
+                    `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')} min`;
+                setTimeout(updateElapsedTime, 1000);
+            }
+        }
+        
+        // Save Functions
+        function showSaveDialog() {
+            document.getElementById('dialogOverlay').classList.add('show');
+            document.getElementById('saveDialog').classList.add('show');
+        }
+        
+        function closeSaveDialog() {
+            document.getElementById('dialogOverlay').classList.remove('show');
+            document.getElementById('saveDialog').classList.remove('show');
+        }
+        
+        function saveToLocal() {
+            const workouts = loadWorkouts();
+            const timestamp = new Date().toISOString();
+            const age = parseInt(document.getElementById('ageInput').value);
+            const activity = document.getElementById('activityType').value;
+            
+            const workout = {
+                date: timestamp,
+                label: `${activity} - ${new Date().toLocaleString()}`,
+                age: age,
+                activity: activity,
+                data: workoutData,
+                duration: workoutData.length > 0 ? workoutData[workoutData.length - 1].time : 0,
+                avgHR: workoutData.length > 0 ? Math.round(workoutData.reduce((sum, d) => sum + d.hr, 0) / workoutData.length) : 0,
+                maxHR: workoutData.length > 0 ? Math.max(...workoutData.map(d => d.hr)) : 0,
+                strengthData: captureStrengthData()
+            };
+            
+            workouts.push(workout);
+            saveWorkouts(workouts);
+            updateHistoryList();
+            resetWorkout();
+            closeSaveDialog();
+            alert('Workout saved to local storage!');
+        }
+        
+        function saveToFile() {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const age = parseInt(document.getElementById('ageInput').value);
+            const activity = document.getElementById('activityType').value;
+            
+            let csv = 'Heart Rate Data\n';
+            csv += `Date,${new Date().toLocaleString()}\n`;
+            csv += `Age,${age}\n`;
+            csv += `Activity,${activity}\n\n`;
+            csv += 'Time (seconds),Heart Rate (BPM),Zone\n';
+            
+            workoutData.forEach(point => {
+                const zone = getZone(point.hr);
+                csv += `${point.time.toFixed(1)},${point.hr},${zone}\n`;
+            });
+            
+            csv += '\n\nStrength Training Data\n';
+            const strengthData = captureStrengthData();
+            csv += JSON.stringify(strengthData, null, 2);
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `workout-${timestamp}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            resetWorkout();
+            closeSaveDialog();
+        }
+        
+        function saveToGoogleSheets() {
+            alert('Google Sheets integration coming soon! For now, use "Save to File" and upload manually to Google Sheets.');
+            closeSaveDialog();
+        }
+        
+        function captureStrengthData() {
+            const data = {};
+            const sections = ['chest', 'back', 'bicep', 'tricep', 'shoulders', 'shoulders2', 'abdomen', 'quads', 'legsExt', 'legsCurl'];
+            
+            sections.forEach(section => {
+                const select = document.getElementById(`${section}Exercise`);
+                const table = document.getElementById(`${section}Table`);
+                if (select && table) {
+                    data[section] = {
+                        exercise: select.value,
+                        sets: []
+                    };
+                    
+                    const rows = table.querySelectorAll('tbody tr');
+                    rows.forEach((row, i) => {
+                        const pounds = row.querySelector('input[name="pounds"]').value;
+                        const reps = row.querySelector('input[name="reps"]').value;
+                        const checked = row.querySelector('input[type="checkbox"]').checked;
+                        
+                        if (pounds || reps) {
+                            data[section].sets.push({
+                                set: i + 1,
+                                pounds: pounds,
+                                reps: reps,
+                                completed: checked
+                            });
+                        }
+                    });
+                }
+            });
+            
+            return data;
+        }
+        
+        function resetWorkout() {
+            isWorkoutActive = false;
+            isPaused = false;
+            workoutData = [];
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('elapsedTime').textContent = '00:00 min';
+            document.getElementById('currentHRValue').textContent = '--';
+        }
+        
+        function loadWorkouts() {
+            const stored = localStorage.getItem('hrWorkouts');
+            return stored ? JSON.parse(stored) : [];
+        }
+        
+        function saveWorkouts(workouts) {
+            const limited = workouts.slice(-5);
+            localStorage.setItem('hrWorkouts', JSON.stringify(limited));
+        }
+        
+        // History
+        function updateHistoryList() {
+            const workouts = loadWorkouts();
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+            
+            workouts.reverse().forEach((workout, index) => {
+                const actualIndex = workouts.length - 1 - index;
+                const color = roygbivColors[actualIndex % roygbivColors.length];
+                
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.innerHTML = `
+                    <input type="checkbox" class="history-checkbox" 
+                           onchange="toggleHistory(${actualIndex})" 
+                           ${selectedHistory.includes(actualIndex) ? 'checked' : ''}>
+                    <span class="history-label">${workout.label}</span>
+                    <div class="history-color" style="background: ${color}"></div>
+                `;
+                list.appendChild(item);
+            });
+        }
+        
+        function toggleHistory(index) {
+            const idx = selectedHistory.indexOf(index);
+            if (idx > -1) {
+                selectedHistory.splice(idx, 1);
+            } else {
+                selectedHistory.push(index);
+            }
+            updateHistoryList();
+            draw();
+        }
+        
+        // Drawing
+        function isPortrait() {
+            return window.innerHeight > window.innerWidth;
+        }
+        
+        function draw() {
+            ctx.fillStyle = '#141824';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const { zones, maxHR, restingHR } = calculateZonesFromAge();
+            
+            // The colored zones (from Zone 1 threshold to maxHR) should occupy 80% of canvas height
+            const zoneHeight = canvas.height * 0.8;
+            const zoneTop = canvas.height * 0.1; // 10% margin at top
+            const zoneBottom = zoneTop + zoneHeight; // 10% margin at bottom
+            
+            // HR range for the colored zones
+            const minDisplayHR = zones[0]; // Zone 1 starts here
+            const hrRange = maxHR - minDisplayHR;
+            
+            // Draw zones
+            zones.forEach((threshold, i) => {
+                const y = zoneBottom - ((threshold - minDisplayHR) / hrRange) * zoneHeight;
+                const nextY = i < zones.length - 1 ? 
+                    zoneBottom - ((zones[i + 1] - minDisplayHR) / hrRange) * zoneHeight : zoneTop;
+                
+                ctx.fillStyle = zoneColors[i] + '30';
+                ctx.fillRect(0, nextY, canvas.width, y - nextY);
+                
+                ctx.strokeStyle = zoneColors[i];
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+                
+                ctx.fillStyle = zoneColors[i];
+                ctx.font = 'bold 14px "Roboto Mono"';
+                ctx.textAlign = 'left';
+                ctx.fillText(threshold + ' BPM', 10, y - 5);
+            });
+            
+            // Draw max HR line
+            ctx.strokeStyle = zoneColors[4];
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, zoneTop);
+            ctx.lineTo(canvas.width, zoneTop);
+            ctx.stroke();
+            ctx.fillStyle = zoneColors[4];
+            ctx.fillText(maxHR + ' BPM', 10, zoneTop + 15);
+            
+            // X axis - portrait: 35 min fixed, landscape: dynamic
+            const portrait = isPortrait();
+            let maxTime = portrait ? 35 * 60 : 30 * 60;
+            
+            if (!portrait && (workoutData.length > 0 || selectedHistory.length > 0)) {
+                const workouts = loadWorkouts();
+                maxTime = Math.max(
+                    workoutData.length > 0 ? workoutData[workoutData.length - 1].time : 0,
+                    ...selectedHistory.map(idx => workouts[idx] ? workouts[idx].duration : 0)
+                );
+                maxTime = Math.ceil(maxTime / 300) * 300;
+                if (maxTime === 0) maxTime = 300;
+            }
+            
+            // Draw time markers and faint vertical lines
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.font = '11px "Roboto Mono"';
+            ctx.textAlign = 'center';
+            
+            const interval = 5 * 60;
+            for (let t = interval; t <= maxTime; t += interval) {
+                const x = (t / maxTime) * canvas.width;
+                
+                // Faint grey vertical line
+                ctx.strokeStyle = 'rgba(128, 128, 128, 0.2)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+                
+                // Time label at bottom
+                const mins = Math.floor(t / 60);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.fillText(mins.toString(), x, canvas.height - 5);
+            }
+            
+            // Draw history workouts
+            const workouts = loadWorkouts();
+            selectedHistory.forEach((idx, colorIdx) => {
+                if (workouts[idx]) {
+                    const color = roygbivColors[idx % roygbivColors.length];
+                    drawWorkoutLine(workouts[idx].data, color, 2, maxTime, minDisplayHR, hrRange, zoneTop, zoneHeight);
+                }
+            });
+            
+            // Draw current workout
+            if (workoutData.length > 1) {
+                drawWorkoutLine(workoutData, '#00d9ff', 3, maxTime, minDisplayHR, hrRange, zoneTop, zoneHeight);
+            }
+            
+            if (isWorkoutActive && !isPaused) {
+                animationFrame = requestAnimationFrame(draw);
+            }
+        }
+        
+        function drawWorkoutLine(data, color, lineWidth, maxTime, minHR, hrRange, zoneTop, zoneHeight) {
+            if (data.length < 2) return;
+            
+            const zoneBottom = zoneTop + zoneHeight;
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            
+            data.forEach((point, i) => {
+                const x = (point.time / maxTime) * canvas.width;
+                const y = zoneBottom - ((point.hr - minHR) / hrRange) * zoneHeight;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            
+            ctx.stroke();
+        }
+        
+        // Section Navigation
+        function showSection(section) {
+            document.getElementById('cardioSection').classList.remove('hidden');
+            document.querySelectorAll('.strength-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.bottom-buttons button').forEach(b => b.classList.remove('active'));
+            
+            if (section === 'cardio') {
+                document.getElementById('btnCardio').classList.add('active');
+            } else {
+                document.getElementById('cardioSection').classList.add('hidden');
+                
+                const sectionMap = {
+                    'chestBack': 'chestBackSection',
+                    'bicepTricep': 'bicepTricepSection',
+                    'shoulders': 'shouldersSection',
+                    'abdomen': 'abdomenSection',
+                    'legs': 'legsSection'
+                };
+                
+                document.getElementById(sectionMap[section]).classList.add('active');
+                document.getElementById(`btn${section.charAt(0).toUpperCase() + section.slice(1)}`).classList.add('active');
+            }
+        }
+        
+        // Strength Training
+        function populateExercises() {
+            Object.keys(exercises).forEach(key => {
+                const select = document.getElementById(`${key}Exercise`);
+                if (select) {
+                    exercises[key].forEach(ex => {
+                        const option = document.createElement('option');
+                        option.value = ex;
+                        option.textContent = ex;
+                        select.appendChild(option);
+                    });
+                    
+                    createSetsTable(key);
+                    loadExerciseData(key);
+                }
+            });
+        }
+        
+        function createSetsTable(section) {
+            const table = document.getElementById(`${section}Table`);
+            if (!table) return;
+            
+            const tbody = table.querySelector('tbody');
+            tbody.innerHTML = '';
+            
+            for (let i = 1; i <= 4; i++) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${i}</td>
+                    <td class="previous-data" id="${section}-prev-${i}">--</td>
+                    <td><input type="number" name="pounds" min="0" class="faint-placeholder"></td>
+                    <td><input type="number" name="reps" min="0" class="faint-placeholder"></td>
+                    <td><input type="checkbox" onchange="toggleSetComplete(this)"></td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+        
+        function toggleSetComplete(checkbox) {
+            const row = checkbox.closest('tr');
+            if (checkbox.checked) {
+                row.classList.add('checked');
+            } else {
+                row.classList.remove('checked');
+            }
+        }
+        
+        function loadExerciseData(section) {
+            const select = document.getElementById(`${section}Exercise`);
+            const exercise = select.value;
+            
+            // Load previous data from last workout
+            const workouts = loadWorkouts();
+            if (workouts.length > 0) {
+                const lastWorkout = workouts[workouts.length - 1];
+                if (lastWorkout.strengthData && lastWorkout.strengthData[section]) {
+                    const data = lastWorkout.strengthData[section];
+                    if (data.exercise === exercise) {
+                        data.sets.forEach((set, i) => {
+                            const prevCell = document.getElementById(`${section}-prev-${i + 1}`);
+                            if (prevCell) {
+                                prevCell.textContent = `${set.pounds} x ${set.reps}`;
+                            }
+                            
+                            const table = document.getElementById(`${section}Table`);
+                            const row = table.querySelectorAll('tbody tr')[i];
+                            if (row) {
+                                row.querySelector('input[name="pounds"]').placeholder = set.pounds;
+                                row.querySelector('input[name="reps"]').placeholder = set.reps;
+                            }
+                        });
+                    }
+                }
+            }
+        }
+        
+        // Initialize on load
+        init();
+        
+        // Check for Web Bluetooth support
+        if (!navigator.bluetooth) {
+            alert('Web Bluetooth is not supported in this browser. Please use Chrome, Edge, or another compatible browser.');
+            document.getElementById('connectBtn').disabled = true;
+        }
+    </script>
+</body>
+</html>
